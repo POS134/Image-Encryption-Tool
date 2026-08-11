@@ -85,7 +85,7 @@ class AutoDetectUSBHardwareSecretProvider(HardwareSecretProvider):
         partitions = psutil.disk_partitions(all=False)
         for p in partitions:
             # Kiểm tra ổ đĩa di động (removable / USB)
-            if 'removable' in p.opts.lower() or p.drive.startswith(('E:', 'F:', 'G:', 'H:', 'I:', 'J:', 'K:', 'U:')):
+            if 'removable' in p.opts.lower() or p.device.startswith(('E:', 'F:', 'G:', 'H:', 'I:', 'J:', 'K:', 'U:')):
                 secret_path = os.path.join(p.mountpoint, self.secret_filename)
                 if os.path.exists(secret_path):
                     return p.mountpoint, secret_path
@@ -340,21 +340,30 @@ class SecureImageApp(ctk.CTk if ctk else object):
         self.status_lbl = ctk.CTkLabel(self.hw_frame, text="Đang kiểm tra thiết bị...", font=ctk.CTkFont(size=13), text_color="#FF9800")
         self.status_lbl.grid(row=1, column=0, columnspan=2, padx=15, pady=(0, 10), sticky="w")
 
-        # 3. FILE SELECTION & PIN ENTRY CARD
+        # 3. FILE / FOLDER SELECTION & PIN ENTRY CARD
         self.input_frame = ctk.CTkFrame(self, corner_radius=10)
         self.input_frame.pack(fill="x", padx=20, pady=10)
 
-        self.btn_select_file = ctk.CTkButton(self.input_frame, text="📁 Chọn Tệp Ảnh (Gốc hoặc .enc)", command=self.select_file, width=220)
-        self.btn_select_file.grid(row=0, column=0, padx=15, pady=15)
+        # Hàng 1: Thao tác Mã hóa
+        self.btn_select_raw_folder = ctk.CTkButton(self.input_frame, text="📁 Chọn Thư mục Ảnh Gốc (Để Mã Hóa)", command=self.select_raw_folder, width=240, fg_color="#E65100", hover_color="#EF6C00")
+        self.btn_select_raw_folder.grid(row=0, column=0, padx=10, pady=10)
 
-        self.file_path_lbl = ctk.CTkLabel(self.input_frame, text="Chưa chọn tệp tin nào", font=ctk.CTkFont(size=12, slant="italic"), text_color="#AAAAAA")
-        self.file_path_lbl.grid(row=0, column=1, padx=15, pady=15, sticky="w")
+        self.btn_select_file = ctk.CTkButton(self.input_frame, text="📄 Chọn 1 Tệp Ảnh Lẻ", command=self.select_file, width=160)
+        self.btn_select_file.grid(row=0, column=1, padx=10, pady=10)
 
+        # Hàng 2: Thao tác Giải mã
+        self.btn_select_enc_folder = ctk.CTkButton(self.input_frame, text="🔓 Chọn Thư mục .enc (Để Giải Mã)", command=self.select_enc_folder, width=240, fg_color="#1565C0", hover_color="#0D47A1")
+        self.btn_select_enc_folder.grid(row=1, column=0, padx=10, pady=10)
+
+        self.file_path_lbl = ctk.CTkLabel(self.input_frame, text="Chưa chọn tệp hoặc thư mục nào", font=ctk.CTkFont(size=12, slant="italic"), text_color="#AAAAAA")
+        self.file_path_lbl.grid(row=1, column=1, padx=15, pady=10, sticky="w")
+
+        # Hàng 3: Mã PIN
         self.pin_label = ctk.CTkLabel(self.input_frame, text="Mã PIN Bảo mật:", font=ctk.CTkFont(size=13, weight="bold"))
-        self.pin_label.grid(row=1, column=0, padx=15, pady=(0, 15), sticky="w")
+        self.pin_label.grid(row=2, column=0, padx=15, pady=(5, 15), sticky="w")
 
         self.pin_entry = ctk.CTkEntry(self.input_frame, placeholder_text="Nhập PIN (Ví dụ: 88886666)", show="*", width=300)
-        self.pin_entry.grid(row=1, column=1, padx=15, pady=(0, 15), sticky="w")
+        self.pin_entry.grid(row=2, column=1, padx=15, pady=(5, 15), sticky="w")
 
         # 4. ACTION BUTTONS (ENCRYPT / DECRYPT)
         self.action_frame = ctk.CTkFrame(self, fg_color="transparent")
@@ -430,15 +439,40 @@ class SecureImageApp(ctk.CTk if ctk else object):
 
     def select_file(self):
         file_path = filedialog.askopenfilename(
-            title="Chọn tệp tin",
-            filetypes=[("Tất cả tệp", "*.*"), ("Tệp mã hóa .enc", "*.enc")]
+            title="Chọn tệp ảnh hoặc tệp mã hóa",
+            filetypes=[
+                ("Tất cả tệp ảnh & mã hóa", "*.png;*.jpg;*.jpeg;*.bmp;*.raw;*.enc"),
+                ("Tệp ảnh PNG (*.png)", "*.png"),
+                ("Tệp ảnh JPG (*.jpg)", "*.jpg"),
+                ("Tệp mã hóa (.enc)", "*.enc"),
+                ("Tất cả tệp (*.*)", "*.*")
+            ]
         )
         if file_path:
             self.selected_file_path = file_path
+            self.is_folder_mode = False
             file_name = os.path.basename(file_path)
             size_mb = os.path.getsize(file_path) / (1024 * 1024)
-            self.file_path_lbl.configure(text=f"{file_name} ({size_mb:.2f} MB)")
-            self.log(f"[*] Đã chọn tệp: {file_path} ({size_mb:.2f} MB)")
+            self.file_path_lbl.configure(text=f"Tệp lẻ: {file_name} ({size_mb:.2f} MB)")
+            self.log(f"[*] Đã chọn tệp lẻ: {file_path} ({size_mb:.2f} MB)")
+
+    def select_raw_folder(self):
+        folder_path = filedialog.askdirectory(title="Chọn Thư mục chứa các ảnh GỐC cần Mã Hóa")
+        if folder_path:
+            self.selected_file_path = folder_path
+            self.is_folder_mode = True
+            folder_name = os.path.basename(folder_path)
+            self.file_path_lbl.configure(text=f"Thư mục Mã hóa: /{folder_name}")
+            self.log(f"[*] Đã chọn THƯ MỤC ÁNH GỐC (ĐỂ MÃ HÓA): {folder_path}")
+
+    def select_enc_folder(self):
+        folder_path = filedialog.askdirectory(title="Chọn Thư mục chứa các tệp .enc cần GIẢI MÃ")
+        if folder_path:
+            self.selected_file_path = folder_path
+            self.is_folder_mode = True
+            folder_name = os.path.basename(folder_path)
+            self.file_path_lbl.configure(text=f"Thư mục Giải mã: /{folder_name}")
+            self.log(f"[*] Đã chọn THƯ MỤC MÃ HÓA .ENC (ĐỂ GIẢI MÃ): {folder_path}")
 
     def update_progress(self, percent: float, text: str):
         self.progress_bar.set(percent)
@@ -446,18 +480,24 @@ class SecureImageApp(ctk.CTk if ctk else object):
 
     def encrypt_action(self):
         if not self.selected_file_path:
-            messagebox.showwarning("Cảnh báo", "Vui lòng chọn tệp ảnh trước!")
+            messagebox.showwarning("Cảnh báo", "Vui lòng chọn tệp lẻ hoặc Thư mục trước!")
             return
         pin = self.pin_entry.get().strip()
         if not pin:
             messagebox.showwarning("Cảnh báo", "Vui lòng nhập Mã PIN!")
             return
 
-        out_path = filedialog.asksaveasfilename(
-            title="Lưu tệp mã hóa (.enc)",
-            defaultextension=".enc",
-            filetypes=[("Encrypted File", "*.enc")]
-        )
+        is_folder = getattr(self, 'is_folder_mode', False) and os.path.isdir(self.selected_file_path)
+
+        if is_folder:
+            out_path = filedialog.askdirectory(title="Chọn Thư mục đích lưu các tệp đã Mã hóa (.enc)")
+        else:
+            out_path = filedialog.asksaveasfilename(
+                title="Lưu tệp mã hóa (.enc)",
+                defaultextension=".enc",
+                filetypes=[("Encrypted File", "*.enc")]
+            )
+            
         if not out_path:
             return
 
@@ -468,11 +508,32 @@ class SecureImageApp(ctk.CTk if ctk else object):
             start_time = time.time()
             try:
                 engine = SecureImageCryptoEngine(self.current_provider)
-                engine.encrypt_image(self.selected_file_path, out_path, pin, progress_callback=self.update_progress)
+                if is_folder:
+                    self.log(f"[*] Bắt đầu Mã hóa hàng loạt Thư mục: {self.selected_file_path}")
+                    files_to_enc = []
+                    for root, _, files in os.walk(self.selected_file_path):
+                        for f in files:
+                            if not f.endswith(".enc"):
+                                files_to_enc.append(os.path.join(root, f))
+                    
+                    total = len(files_to_enc)
+                    self.log(f"[*] Tổng số file phát hiện: {total}")
+                    for idx, in_f in enumerate(files_to_enc, 1):
+                        rel_path = os.path.relpath(in_f, self.selected_file_path)
+                        target_f = os.path.join(out_path, rel_path) + ".enc"
+                        os.makedirs(os.path.dirname(target_f), exist_ok=True)
+                        
+                        engine.encrypt_image(in_f, target_f, pin)
+                        percent = idx / total
+                        self.update_progress(percent, f"Đã mã hóa thư mục: {idx}/{total} file ({percent*100:.1f}%)")
+                        if idx <= 5 or idx % 10 == 0 or idx == total:
+                            self.log(f"    -> Đã mã hóa #{idx}/{total}: {os.path.basename(in_f)}")
+                else:
+                    engine.encrypt_image(self.selected_file_path, out_path, pin, progress_callback=self.update_progress)
+                
                 elapsed = time.time() - start_time
                 self.log(f"[✓] MÃ HÓA THÀNH CÔNG trong {elapsed:.2f} giây!")
-                self.log(f"[*] Tệp mã hóa lưu tại: {out_path}")
-                messagebox.showinfo("Thành công", f"Mã hóa tệp hoàn tất!\nThời gian: {elapsed:.2f}s")
+                messagebox.showinfo("Thành công", f"Mã hóa hoàn tất!\nThời gian: {elapsed:.2f}s")
             except Exception as e:
                 self.log(f"[LỖI BẢO MẬT]: {e}")
                 messagebox.showerror("Lỗi Mã Hóa", str(e))
@@ -484,18 +545,24 @@ class SecureImageApp(ctk.CTk if ctk else object):
 
     def decrypt_action(self):
         if not self.selected_file_path:
-            messagebox.showwarning("Cảnh báo", "Vui lòng chọn tệp mã hóa (.enc) trước!")
+            messagebox.showwarning("Cảnh báo", "Vui lòng chọn tệp mã hóa (.enc) hoặc Thư mục chứa tệp mã hóa!")
             return
         pin = self.pin_entry.get().strip()
         if not pin:
             messagebox.showwarning("Cảnh báo", "Vui lòng nhập Mã PIN!")
             return
 
-        out_path = filedialog.asksaveasfilename(
-            title="Lưu tệp ảnh giải mã",
-            defaultextension=".raw",
-            filetypes=[("Tất cả tệp", "*.*")]
-        )
+        is_folder = getattr(self, 'is_folder_mode', False) and os.path.isdir(self.selected_file_path)
+
+        if is_folder:
+            out_path = filedialog.askdirectory(title="Chọn Thư mục đích lưu các tệp sau khi Giải Mã")
+        else:
+            out_path = filedialog.asksaveasfilename(
+                title="Lưu tệp ảnh giải mã",
+                defaultextension=".raw",
+                filetypes=[("Tất cả tệp", "*.*")]
+            )
+            
         if not out_path:
             return
 
@@ -506,11 +573,41 @@ class SecureImageApp(ctk.CTk if ctk else object):
             start_time = time.time()
             try:
                 engine = SecureImageCryptoEngine(self.current_provider)
-                engine.decrypt_image(self.selected_file_path, out_path, pin, progress_callback=self.update_progress)
+                if is_folder:
+                    self.log(f"[*] Bắt đầu Giải mã hàng loạt Thư mục: {self.selected_file_path}")
+                    files_to_dec = []
+                    for root, _, files in os.walk(self.selected_file_path):
+                        for f in files:
+                            if f.endswith(".enc"):
+                                files_to_dec.append(os.path.join(root, f))
+                    
+                    total = len(files_to_dec)
+                    if total == 0:
+                        raise ValueError("Không tìm thấy tệp đuôi .enc nào trong thư mục được chọn!")
+
+                    self.log(f"[*] Tổng số file .enc phát hiện: {total}")
+                    for idx, in_f in enumerate(files_to_dec, 1):
+                        rel_path = os.path.relpath(in_f, self.selected_file_path)
+                        # Bỏ đuôi .enc khi khôi phục
+                        if rel_path.endswith(".enc"):
+                            orig_rel_path = rel_path[:-4]
+                        else:
+                            orig_rel_path = rel_path
+                            
+                        target_f = os.path.join(out_path, orig_rel_path)
+                        os.makedirs(os.path.dirname(target_f), exist_ok=True)
+                        
+                        engine.decrypt_image(in_f, target_f, pin)
+                        percent = idx / total
+                        self.update_progress(percent, f"Đã giải mã thư mục: {idx}/{total} file ({percent*100:.1f}%)")
+                        if idx <= 5 or idx % 10 == 0 or idx == total:
+                            self.log(f"    -> Đã giải mã #{idx}/{total}: {os.path.basename(orig_rel_path)} [GCM Tag OK ✓]")
+                else:
+                    engine.decrypt_image(self.selected_file_path, out_path, pin, progress_callback=self.update_progress)
+
                 elapsed = time.time() - start_time
-                self.log(f"[✓] GIẢI MÃ THÀNH CÔNG trong {elapsed:.2f} giây!")
-                self.log(f"[*] Tệp giải mã lưu tại: {out_path}")
-                messagebox.showinfo("Thành công", f"Giải mã tệp hoàn tất thành công!\nThời gian: {elapsed:.2f}s")
+                self.log(f"[✓] GIẢI MÃ THÀNH CÔNG toàn bộ tệp trong {elapsed:.2f} giây!")
+                messagebox.showinfo("Thành công", f"Giải mã hoàn tất!\nThời gian: {elapsed:.2f}s")
             except Exception as e:
                 self.log(f"[LỖI XÁC THỰC / GCM TAG]: {e}")
                 messagebox.showerror("Lỗi Giải Mã / Integrity Breach", str(e))
