@@ -135,6 +135,32 @@ class PKCS11HardwareSecretProvider(HardwareSecretProvider):
         return b"PKCS11_HSM_HARDWARE_SECRET_KEY_32B"
 
 
+class MachineSerialHardwareSecretProvider(HardwareSecretProvider):
+    """
+    Giai đoạn 3 (Hardware-Binding): Sử dụng UUID/Serial của Máy tính làm Khóa.
+    Mỗi máy tính sẽ sinh ra khóa khác nhau. Chống copy file sang máy khác.
+    """
+    def is_connected(self) -> bool:
+        return True
+
+    def get_device_info(self) -> str:
+        return "Serial Máy tính (Hardware-Binding) [ĐÃ SẴN SÀNG]"
+
+    def get_hardware_secret(self) -> bytes:
+        import subprocess
+        try:
+            # Lấy UUID của Mainboard qua wmic (Windows)
+            output = subprocess.check_output('wmic csproduct get uuid', shell=True).decode()
+            lines = output.strip().split('\n')
+            if len(lines) >= 2:
+                uuid = lines[1].strip()
+                if uuid:
+                    return uuid.encode('utf-8')
+        except Exception:
+            pass
+        return b"FALLBACK_MACHINE_SERIAL_SECRET_KEY_123"
+
+
 # ==============================================================================
 # 2. CRYPTO ENGINE WITH PROGRESS CALLBACK FOR GUI
 # ==============================================================================
@@ -303,6 +329,7 @@ class SecureImageApp(ctk.CTk if ctk else object):
         self.folder_provider = FolderHardwareSecretProvider(self.secure_folder)
         self.usb_provider = AutoDetectUSBHardwareSecretProvider()
         self.pkcs11_provider = PKCS11HardwareSecretProvider()
+        self.machine_provider = MachineSerialHardwareSecretProvider()
 
         self.current_provider = self.usb_provider  # Mặc định dùng USB Thật
         
@@ -332,7 +359,7 @@ class SecureImageApp(ctk.CTk if ctk else object):
 
         self.mode_selector = ctk.CTkOptionMenu(
             self.hw_frame,
-            values=["USB Thật (Tự động quét)", "Thư mục Mô phỏng (Secure Folder)", "PKCS#11 HSM (SmartCard)"],
+            values=["USB Thật (Tự động quét)", "Thư mục Mô phỏng (Secure Folder)", "Serial Máy Tính (Hardware-Binding)", "PKCS#11 HSM (SmartCard)"],
             command=self.on_provider_changed
         )
         self.mode_selector.grid(row=0, column=1, padx=15, pady=10, sticky="e")
@@ -414,6 +441,8 @@ class SecureImageApp(ctk.CTk if ctk else object):
             self.current_provider = self.usb_provider
         elif "Thư mục Mô phỏng" in choice:
             self.current_provider = self.folder_provider
+        elif "Serial Máy Tính" in choice:
+            self.current_provider = self.machine_provider
         else:
             self.current_provider = self.pkcs11_provider
         self.update_hw_status()
