@@ -310,7 +310,7 @@ class SecureImageApp(ctk.CTk if ctk else object):
         
         super().__init__()
 
-        self.title("HỆ THỐNG MÃ HÓA & LƯU TRỮ ẢNH AN TOÀN (AES-256-GCM HYBRID)")
+        self.title("SecureImageGuard - Hệ thống Bảo vệ & Mã hóa Ảnh An toàn Dung lượng lớn")
         self.geometry("820x620")
         ctk.set_appearance_mode("Dark")
         ctk.set_default_color_theme("blue")
@@ -336,8 +336,8 @@ class SecureImageApp(ctk.CTk if ctk else object):
 
         self.title_label = ctk.CTkLabel(
             self.header_frame, 
-            text="🔒 HỆ THỐNG MÃ HÓA ÁNH AN TOÀN DUNG LƯỢNG LỚN",
-            font=ctk.CTkFont(size=18, weight="bold"),
+            text="🔒 SECURE-IMAGE-GUARD: HỆ THỐNG MÃ HÓA ÁNH SỐ DUNG LƯỢNG LỚN",
+            font=ctk.CTkFont(size=17, weight="bold"),
             text_color="#4CAF50"
         )
         self.title_label.pack(pady=10)

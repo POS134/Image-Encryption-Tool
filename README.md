@@ -1,7 +1,7 @@
-# HỆ THỐNG MÃ HÓA & LƯU TRỮ ẢNH AN TOÀN DUNG LƯỢNG LỚN (AES-256-GCM HYBRID)
+# SECURE-IMAGE-GUARD (HỆ THỐNG BẢO VỆ & MÃ HÓA ÁNH SỐ DUNG LƯỢNG LỚN)
 
-> **Dự án Luận văn Thạc sĩ CNTT / An toàn Thông tin**
-> Nghiên cứu & Triển khai Hệ thống Mã hóa Ảnh Dung lượng lớn áp dụng Mật mã Lai 2 Lớp (AES-256-GCM + PBKDF2 KDF) tích hợp Khóa Bảo mật Phần cứng (USB Hardware-Binding / PKCS#11) và Xử lý Luồng (Streaming Chunking).
+> **Luận văn Thạc sĩ Công nghệ Thông tin / An toàn Thông tin**
+> **Tên đề tài:** Nghiên cứu và Triển khai Hệ thống Bảo mật & Mã hóa Ảnh Dung lượng lớn áp dụng Mật mã Lai 2 Lớp (AES-256-GCM + PBKDF2 KDF) tích hợp Ràng buộc Phần cứng (USB Hardware-Binding / PKCS#11) và Xử lý Luồng (Streaming Chunking).
 
 ---
 
