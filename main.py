@@ -385,12 +385,22 @@ class SecureImageApp(ctk.CTk if ctk else object):
         self.file_path_lbl = ctk.CTkLabel(self.input_frame, text="Chưa chọn tệp hoặc thư mục nào", font=ctk.CTkFont(size=12, slant="italic"), text_color="#AAAAAA")
         self.file_path_lbl.grid(row=1, column=1, padx=15, pady=10, sticky="w")
 
-        # Hàng 3: Mã PIN
+        # Hàng 3: Mã PIN & Tùy chọn Tự động Xóa Ảnh Gốc (Mô hình A)
         self.pin_label = ctk.CTkLabel(self.input_frame, text="Mã PIN Bảo mật:", font=ctk.CTkFont(size=13, weight="bold"))
         self.pin_label.grid(row=2, column=0, padx=15, pady=(5, 15), sticky="w")
 
-        self.pin_entry = ctk.CTkEntry(self.input_frame, placeholder_text="Nhập PIN (Ví dụ: 88886666)", show="*", width=300)
-        self.pin_entry.grid(row=2, column=1, padx=15, pady=(5, 15), sticky="w")
+        self.pin_entry = ctk.CTkEntry(self.input_frame, placeholder_text="Nhập PIN (Ví dụ: 88886666)", show="*", width=200)
+        self.pin_entry.grid(row=2, column=1, padx=10, pady=(5, 15), sticky="w")
+
+        self.delete_orig_var = ctk.BooleanVar(value=True) # Mặc định chọn Mô hình A (Tự động xóa ảnh gốc)
+        self.delete_orig_cb = ctk.CTkCheckBox(
+            self.input_frame, 
+            text="🔥 Tự động XÓA ẢNH GỐC sau khi Mã Hóa (Mô hình A - Bảo mật Tuyệt đối)", 
+            variable=self.delete_orig_var,
+            font=ctk.CTkFont(size=12, weight="bold"),
+            text_color="#FF9800"
+        )
+        self.delete_orig_cb.grid(row=2, column=2, padx=15, pady=(5, 15), sticky="w")
 
         # 4. ACTION BUTTONS (ENCRYPT / DECRYPT)
         self.action_frame = ctk.CTkFrame(self, fg_color="transparent")
@@ -547,18 +557,32 @@ class SecureImageApp(ctk.CTk if ctk else object):
                     
                     total = len(files_to_enc)
                     self.log(f"[*] Tổng số file phát hiện: {total}")
+                    should_delete = self.delete_orig_var.get()
+                    if should_delete:
+                        self.log("[🔥 MÔ HÌNH A KÍCH HOẠT] Ảnh gốc sẽ tự động XÓA VĨNH VIỄN sau khi mã hóa thành công!")
+
                     for idx, in_f in enumerate(files_to_enc, 1):
                         rel_path = os.path.relpath(in_f, self.selected_file_path)
                         target_f = os.path.join(out_path, rel_path) + ".enc"
                         os.makedirs(os.path.dirname(target_f), exist_ok=True)
                         
                         engine.encrypt_image(in_f, target_f, pin)
+
+                        if should_delete and os.path.exists(target_f):
+                            try:
+                                os.remove(in_f)
+                            except Exception as del_e:
+                                self.log(f"    [!] Không thể xóa ảnh gốc: {del_e}")
+
                         percent = idx / total
                         self.update_progress(percent, f"Đã mã hóa thư mục: {idx}/{total} file ({percent*100:.1f}%)")
                         if idx <= 5 or idx % 10 == 0 or idx == total:
-                            self.log(f"    -> Đã mã hóa #{idx}/{total}: {os.path.basename(in_f)}")
+                            self.log(f"    -> Đã mã hóa #{idx}/{total}: {os.path.basename(in_f)} {'[ĐÃ XÓA GỐC 🔥]' if should_delete else ''}")
                 else:
                     engine.encrypt_image(self.selected_file_path, out_path, pin, progress_callback=self.update_progress)
+                    if self.delete_orig_var.get() and os.path.exists(out_path):
+                        os.remove(self.selected_file_path)
+                        self.log(f"[🔥 MÔ HÌNH A] Đã XÓA VĨNH VIỄN tệp gốc: {os.path.basename(self.selected_file_path)}")
                 
                 elapsed = time.time() - start_time
                 self.log(f"[✓] MÃ HÓA THÀNH CÔNG trong {elapsed:.2f} giây!")
@@ -627,12 +651,23 @@ class SecureImageApp(ctk.CTk if ctk else object):
                         os.makedirs(os.path.dirname(target_f), exist_ok=True)
                         
                         engine.decrypt_image(in_f, target_f, pin)
+                        
+                        # Giải mã thành công -> Tự động xóa tệp rác .enc
+                        if os.path.exists(target_f):
+                            try:
+                                os.remove(in_f)
+                            except Exception as del_e:
+                                self.log(f"    [!] Không thể xóa tệp .enc: {del_e}")
+
                         percent = idx / total
                         self.update_progress(percent, f"Đã giải mã thư mục: {idx}/{total} file ({percent*100:.1f}%)")
                         if idx <= 5 or idx % 10 == 0 or idx == total:
-                            self.log(f"    -> Đã giải mã #{idx}/{total}: {os.path.basename(orig_rel_path)} [GCM Tag OK ✓]")
+                            self.log(f"    -> Đã giải mã #{idx}/{total}: {os.path.basename(orig_rel_path)} [ĐÃ DỌN .ENC 🔥]")
                 else:
                     engine.decrypt_image(self.selected_file_path, out_path, pin, progress_callback=self.update_progress)
+                    if os.path.exists(out_path):
+                        os.remove(self.selected_file_path)
+                        self.log(f"[🔥 DỌN DẸP] Đã XÓA TỆP MÃ HÓA .ENC sau khi phục hồi ảnh gốc thành công!")
 
                 elapsed = time.time() - start_time
                 self.log(f"[✓] GIẢI MÃ THÀNH CÔNG toàn bộ tệp trong {elapsed:.2f} giây!")

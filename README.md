@@ -1,50 +1,88 @@
-# HỆ THỐNG MÃ HÓA & LƯU TRỮ ẢNH AN TOÀN (Image-Encryption-Tool)
+# HỆ THỐNG MÃ HÓA & LƯU TRỮ ẢNH AN TOÀN DUNG LƯỢNG LỚN (AES-256-GCM HYBRID)
 
-Dự án này là hệ thống phần mềm hỗ trợ mã hóa và giải mã hình ảnh/dữ liệu an toàn, được phát triển phục vụ cho Đồ án/Luận văn Thạc sĩ. Hệ thống giải quyết bài toán lưu trữ Dữ liệu lớn (Big Data) trên các thiết bị di động (USB/Ổ cứng ngoài) bằng cách áp dụng mô hình **Mã hóa Phong bì (Envelope Encryption)** kết hợp với **Trói buộc Phần cứng (Hardware-Binding)**, đảm bảo an toàn tuyệt đối chống lại rủi ro mất cắp thiết bị lưu trữ.
+> **Dự án Luận văn Thạc sĩ CNTT / An toàn Thông tin**
+> Nghiên cứu & Triển khai Hệ thống Mã hóa Ảnh Dung lượng lớn áp dụng Mật mã Lai 2 Lớp (AES-256-GCM + PBKDF2 KDF) tích hợp Khóa Bảo mật Phần cứng (USB Hardware-Binding / PKCS#11) và Xử lý Luồng (Streaming Chunking).
 
-## Kiến trúc Bảo mật (Cốt lõi Luận văn)
+---
 
-Hệ thống tách biệt hoàn toàn **Nơi lưu trữ dữ liệu (USB)** và **Khóa giải mã (Máy tính)** thông qua kiến trúc 2 tầng khóa:
+## 🌟 TÍNH NĂNG NỔI BẬT
 
-1. **Khóa Dữ liệu (DEK - Data Encryption Key):** 
-   Mỗi tệp được mã hóa bằng một khóa ngẫu nhiên chuẩn **AES-256-GCM**. Thuật toán này có tốc độ cực cao, phù hợp để xử lý các tệp dataset khổng lồ, đồng thời cung cấp tính năng Xác thực thông điệp (GCM Auth Tag) giúp chống lại các hành vi can thiệp hay phá hoại dữ liệu (Ransomware).
-2. **Khóa Bảo vệ Khóa (KEK - Key Encryption Key):**
-   Khóa DEK sẽ được mã hóa và đóng gói lại bởi khóa KEK. Khóa KEK không được lưu trữ mà được dẫn xuất động (PBKDF2HMAC) từ sự kết hợp của 2 yếu tố (2FA):
-   - **Yếu tố con người (Mã PIN):** Mật khẩu bí mật của người dùng.
-   - **Yếu tố phần cứng (Hardware Key):** Hệ thống trích xuất **Mã Serial / UUID của Bo mạch chủ (Máy tính)** làm chìa khóa.
+1. **Thuật toán Cốt lõi (Core Security):**
+   - Sử dụng **AES-256-GCM** (Galois/Counter Mode) thuộc chuẩn **AEAD** (Authenticated Encryption with Associated Data).
+   - Vừa bảo mật dữ liệu (Confidentiality) vừa kiểm tra tính toàn vẹn (Integrity) nhờ **16-byte Auth Tag** tự động.
 
-**Kịch bản Ứng dụng Thực tế:** Toàn bộ dữ liệu mã hóa được lưu trên USB. Người dùng có thể đánh rơi USB mà không sợ lộ dữ liệu, vì kẻ gian dù biết mã PIN cũng không thể mở được file do không có đúng chiếc Máy tính (Khóa phần cứng) của nạn nhân.
+2. **Quản lý Khóa Lai 2 Lớp (Hybrid Key Management & Hardware-Binding):**
+   - **Data Encryption Key (DEK):** Sinh ngẫu nhiên 256-bit độc lập cho từng tệp ảnh.
+   - **Key Encryption Key (KEK / Master Key):** Sinh ngẫu nhiên từ sự kết hợp giữa **[Bí mật Phần cứng USB]** + **[Mã PIN Người dùng]** thông qua hàm KDF `PBKDF2-HMAC-SHA256` ($100.000+$ iterations).
 
-## Tính năng nổi bật
-* **Bảo mật Hardware-Binding:** Chống đánh cắp dữ liệu chéo thiết bị bằng cách neo khóa mã hóa vào phần cứng máy tính hoặc Smartcard.
-* **Xử lý Streaming (Chunking):** Tối ưu hóa RAM cho các tệp ảnh/dữ liệu cực lớn (hỗ trợ đến 33GB+) bằng cách chia nhỏ dữ liệu thành các khối 4MB để xử lý "in-flight" thay vì nạp toàn bộ vào RAM.
-* **Giao diện hiện đại (GUI):** Ứng dụng tích hợp giao diện người dùng hiện đại, thân thiện Dark Mode, được xây dựng bằng `customtkinter`.
-* **Xử lý Hàng loạt (Batch Processing):** Hỗ trợ mã hóa hàng loạt dataset bằng đa tiến trình (Multiprocessing), tích hợp tính năng tự động lưu điểm neo (`checkpoint.json`) để khôi phục khi bị gián đoạn.
-* **Công cụ Báo cáo Trực quan:** Chứa script tự động tạo biểu đồ so sánh hiệu suất tiêu thụ RAM và tốc độ xử lý phục vụ báo cáo khoa học.
+3. **Mã hóa Luồng Dữ liệu Dung lượng lớn (Streaming / Chunked Processing):**
+   - Chia nhỏ tệp tin thành các khối (Chunk 4MB), đọc/ghi nối tiếp.
+   - **Dung lượng RAM tiêu thụ duy trì ở mức cố định $<30\text{ MB}$** ngay cả khi xử lý các tệp ảnh siêu lớn ($33\text{GB}+$).
 
-## Cấu trúc Dự án
-* `main.py`: Chứa ứng dụng GUI chính, bộ công cụ mã hóa lõi, và các lớp quản lý giao tiếp thiết bị (USB, Thư mục mô phỏng, Serial Máy tính, PKCS#11).
-* `batch_encrypt.py`: Script CLI mã hóa hàng loạt tối đa hóa công suất CPU.
-* `generate_charts.py`: Script xuất các biểu đồ trực quan (benchmark tốc độ và RAM) phục vụ viết luận văn.
+4. **Mô hình Bảo mật Vòng đời Dữ liệu (Model A - In-place Encryption & Auto-Cleanup):**
+   - **Khi Mã hóa:** Tạo tệp `.enc` thành công $\rightarrow$ **Tự động xóa vĩnh viễn tệp ảnh gốc**.
+   - **Khi Giải mã:** Phôi phục tệp ảnh gốc thành công $\rightarrow$ **Tự động dọn dẹp tệp `.enc` rác**.
 
-## Hướng dẫn Sử dụng
+5. **Xử lý Song song (Batch Encryption Multiprocessing):**
+   - Hỗ trợ mã hóa hàng loạt hàng chục nghìn ảnh ($34.980+$ ảnh) tự động sử dụng đa nhân CPU với cơ chế lưu trạng thái Checkpoint chống ngắt điện đột ngột.
 
-### 1. Khởi chạy Ứng dụng Chính
+---
+
+## 🏗️ CẤU TRÚC DỰ ÁN
+
+```text
+MaHoaAnH_Project/
+├── main.py                 # Core Crypto Engine & Giao diện Desktop GUI (CustomTkinter)
+├── batch_encrypt.py        # Script mã hóa hàng loạt song song (Multiprocessing Batch Mode)
+├── generate_charts.py      # Bộ công cụ xuất biểu đồ hiệu năng & trực quan hóa báo cáo
+├── demo_secure_key_location/# Thư mục mô phỏng khóa phần cứng (Giai đoạn 1A)
+├── requirements.txt        # Danh sách thư viện phụ thuộc
+├── README.md               # Tài liệu hướng dẫn dự án
+└── report_charts/          # Các biểu đồ & hình ảnh thực nghiệm xuất cho luận văn
+    ├── chart_ram_benchmark.png
+    ├── chart_speed_benchmark.png
+    └── visual_image_comparison.png
+```
+
+---
+
+## 🛠️ HƯỚNG DẪN CÀI ĐẶT & CHẠY ỨNG DỤNG
+
+### 1. Cài đặt các thư viện phụ thuộc
+```bash
+pip install cryptography customtkinter Pillow psutil pywin32 matplotlib
+```
+
+### 2. Khởi chạy Giao diện Desktop (GUI App)
 ```bash
 python main.py
 ```
-* **Mã hóa:** Chọn nguồn khóa là **Serial Máy Tính (Hardware-Binding)**. Chọn thư mục chứa dataset ảnh, nhập PIN và trỏ đầu ra trực tiếp vào USB/Ổ cứng ngoài.
-* **Giải mã:** Cắm USB vào đúng chiếc máy tính đã mã hóa, chọn file trên USB, nhập PIN để giải mã.
+- Đèn báo trạng thái phần cứng tự động kiểm tra USB (`E:\device_secret.key`).
+- Chọn tệp lẻ hoặc chọn nguyên thư mục ảnh gốc/thư mục `.enc`.
+- Nhập PIN (ví dụ: `88886666`) và bấm **MÃ HÓA** hoặc **GIẢI MÃ**.
 
-### 2. Mã hóa Hàng loạt (Batch Processing)
-Phù hợp để xử lý toàn bộ dataset. Tự động khai thác đa luồng CPU:
+### 3. Khởi chạy Mã hóa Hàng loạt (Batch Mode cho Dataset lớn)
 ```bash
-python batch_encrypt.py
+python batch_encrypt.py 88886666
 ```
-*(Lưu ý: Tinh chỉnh đường dẫn Input/Output trong file script trước khi chạy).*
 
-### 3. Xuất Biểu đồ Đánh giá
+### 4. Tạo lại các Biểu đồ Báo cáo Thực nghiệm (300 DPI)
 ```bash
 python generate_charts.py
 ```
-*(Biểu đồ sẽ được lưu ở thư mục `report_charts/`).*
+
+---
+
+## 📊 CẤU TRÚC TỆP MÃ HÓA (.ENC BINARY FORMAT)
+
+| Offset | Trường dữ liệu | Kích thước | Mô tả |
+| :--- | :--- | :--- | :--- |
+| `0x00 - 0x07` | Magic Header | 8 Bytes | Chuỗi nhận dạng cố định `SECIMG01` |
+| `0x08 - 0x0B` | Header Length | 4 Bytes | Độ dài Metadata JSON (Big-Endian uint32) |
+| `0x0C - N` | Metadata JSON | Khả biến | Chứa `salt`, `dek_nonce`, `encrypted_dek`, `chunk_size` |
+| `N+1 - End` | Payload Stream | Khả biến | Chuỗi khối: `[CHUNK_LEN (4B)] + [NONCE (12B)] + [CYPHERTEXT + TAG (16B)]` |
+
+---
+
+## 📄 GIẤY PHÉP & BẢO QUYỀN
+Dự án được bảo vệ bản quyền nghiên cứu thuộc Luận văn Thạc sĩ An toàn Thông tin / Công nghệ Thông tin.
