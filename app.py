@@ -315,23 +315,15 @@ class SecureImageApp(ctk.CTk if ctk else object):
         ctk.set_appearance_mode("Dark")
         ctk.set_default_color_theme("blue")
 
-        # Nguồn quản lý phần ứng
+        # Nguồn quản lý phần cứng
         self.workspace_dir = os.path.dirname(os.path.abspath(__file__))
-        self.secure_folder = os.path.join(self.workspace_dir, "demo_secure_key_location")
-        os.makedirs(self.secure_folder, exist_ok=True)
-        
-        # Đảm bảo có sẵn key mô phỏng
-        mock_key_path = os.path.join(self.secure_folder, "device_secret.key")
-        if not os.path.exists(mock_key_path):
-            with open(mock_key_path, "wb") as f:
-                f.write(os.urandom(32))
-
+        self.secure_folder = r"C:\SecureKeys"
         self.folder_provider = FolderHardwareSecretProvider(self.secure_folder)
         self.usb_provider = AutoDetectUSBHardwareSecretProvider()
         self.pkcs11_provider = PKCS11HardwareSecretProvider()
         self.machine_provider = MachineSerialHardwareSecretProvider()
 
-        self.current_provider = self.usb_provider  # Mặc định dùng USB Thật
+        self.current_provider = self.usb_provider  # Mặc định ưu tiên USB Thật
         
         self.selected_file_path = ""
         self.setup_ui()

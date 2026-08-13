@@ -32,10 +32,9 @@
 
 ```text
 MaHoaAnH_Project/
-├── main.py                 # Core Crypto Engine & Giao diện Desktop GUI (CustomTkinter)
-├── batch_encrypt.py        # Script mã hóa hàng loạt song song (Multiprocessing Batch Mode)
-├── generate_charts.py      # Bộ công cụ xuất biểu đồ hiệu năng & trực quan hóa báo cáo
-├── demo_secure_key_location/# Thư mục mô phỏng khóa phần cứng (Giai đoạn 1A)
+├── app.py                  # Core Crypto Engine & Giao diện Desktop GUI (CustomTkinter)
+├── batch_processor.py     # Script mã hóa hàng loạt song song (Multiprocessing Batch Mode)
+├── benchmark_reporter.py   # Bộ công cụ xuất biểu đồ hiệu năng & trực quan hóa báo cáo
 ├── requirements.txt        # Danh sách thư viện phụ thuộc
 ├── README.md               # Tài liệu hướng dẫn dự án
 └── report_charts/          # Các biểu đồ & hình ảnh thực nghiệm xuất cho luận văn
@@ -55,7 +54,7 @@ pip install cryptography customtkinter Pillow psutil pywin32 matplotlib
 
 ### 2. Khởi chạy Giao diện Desktop (GUI App)
 ```bash
-python main.py
+python app.py
 ```
 - Đèn báo trạng thái phần cứng tự động kiểm tra USB (`E:\device_secret.key`).
 - Chọn tệp lẻ hoặc chọn nguyên thư mục ảnh gốc/thư mục `.enc`.
@@ -63,12 +62,12 @@ python main.py
 
 ### 3. Khởi chạy Mã hóa Hàng loạt (Batch Mode cho Dataset lớn)
 ```bash
-python batch_encrypt.py 88886666
+python batch_processor.py 88886666
 ```
 
 ### 4. Tạo lại các Biểu đồ Báo cáo Thực nghiệm (300 DPI)
 ```bash
-python generate_charts.py
+python benchmark_reporter.py
 ```
 
 ---

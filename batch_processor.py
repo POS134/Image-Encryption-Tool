@@ -10,7 +10,7 @@ import multiprocessing
 # Đảm bảo import được module từ thư mục hiện tại
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from main import AutoDetectUSBHardwareSecretProvider, SecureImageCryptoEngine
+from app import AutoDetectUSBHardwareSecretProvider, SecureImageCryptoEngine
 
 def encrypt_worker(input_path: str, output_path: str, pin: str):
     """
