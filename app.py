@@ -99,7 +99,7 @@ class AutoDetectUSBHardwareSecretProvider(HardwareSecretProvider):
         if usb_info:
             mountpoint, _ = usb_info
             return f"USB Thật (Ổ đĩa {mountpoint}) [ĐÃ SẴN SÀNG]"
-        return "CHƯA CẮM USB THẬT (Hoặc USB thiếu tệp 'device_secret.key')"
+        return "CHƯA KẾT NỐI USB THẬT (Hoặc USB thiếu tệp 'device_secret.key')"
 
     def get_hardware_secret(self) -> bytes:
         usb_info = self._find_usb_secret_path()
@@ -363,19 +363,15 @@ class SecureImageApp(ctk.CTk if ctk else object):
         self.input_frame = ctk.CTkFrame(self, corner_radius=10)
         self.input_frame.pack(fill="x", padx=20, pady=10)
 
-        # Hàng 1: Thao tác Mã hóa
-        self.btn_select_raw_folder = ctk.CTkButton(self.input_frame, text="📁 Chọn Thư mục Ảnh Gốc (Để Mã Hóa)", command=self.select_raw_folder, width=240, fg_color="#E65100", hover_color="#EF6C00")
-        self.btn_select_raw_folder.grid(row=0, column=0, padx=10, pady=10)
+        # Hàng 1: Thao tác Chọn File / Folder
+        self.btn_select_file = ctk.CTkButton(self.input_frame, text="📄 Chọn Tệp Ảnh Lẻ", command=self.select_file, width=160)
+        self.btn_select_file.grid(row=0, column=0, padx=10, pady=10)
 
-        self.btn_select_file = ctk.CTkButton(self.input_frame, text="📄 Chọn 1 Tệp Ảnh Lẻ", command=self.select_file, width=160)
-        self.btn_select_file.grid(row=0, column=1, padx=10, pady=10)
-
-        # Hàng 2: Thao tác Giải mã
-        self.btn_select_enc_folder = ctk.CTkButton(self.input_frame, text="🔓 Chọn Thư mục .enc (Để Giải Mã)", command=self.select_enc_folder, width=240, fg_color="#1565C0", hover_color="#0D47A1")
-        self.btn_select_enc_folder.grid(row=1, column=0, padx=10, pady=10)
+        self.btn_select_folder = ctk.CTkButton(self.input_frame, text="📁 Chọn NGUYÊN THƯ MỤC", command=self.select_folder, width=190, fg_color="#E65100", hover_color="#EF6C00")
+        self.btn_select_folder.grid(row=0, column=1, padx=10, pady=10)
 
         self.file_path_lbl = ctk.CTkLabel(self.input_frame, text="Chưa chọn tệp hoặc thư mục nào", font=ctk.CTkFont(size=12, slant="italic"), text_color="#AAAAAA")
-        self.file_path_lbl.grid(row=1, column=1, padx=15, pady=10, sticky="w")
+        self.file_path_lbl.grid(row=0, column=2, padx=15, pady=10, sticky="w")
 
         # Hàng 3: Mã PIN & Tùy chọn Tự động Xóa Ảnh Gốc (Mô hình A)
         self.pin_label = ctk.CTkLabel(self.input_frame, text="Mã PIN Bảo mật:", font=ctk.CTkFont(size=13, weight="bold"))
@@ -487,23 +483,14 @@ class SecureImageApp(ctk.CTk if ctk else object):
             self.file_path_lbl.configure(text=f"Tệp lẻ: {file_name} ({size_mb:.2f} MB)")
             self.log(f"[*] Đã chọn tệp lẻ: {file_path} ({size_mb:.2f} MB)")
 
-    def select_raw_folder(self):
-        folder_path = filedialog.askdirectory(title="Chọn Thư mục chứa các ảnh GỐC cần Mã Hóa")
+    def select_folder(self):
+        folder_path = filedialog.askdirectory(title="Chọn Thư mục (Mã Hóa hoặc Giải Mã)")
         if folder_path:
             self.selected_file_path = folder_path
             self.is_folder_mode = True
             folder_name = os.path.basename(folder_path)
-            self.file_path_lbl.configure(text=f"Thư mục Mã hóa: /{folder_name}")
-            self.log(f"[*] Đã chọn THƯ MỤC ÁNH GỐC (ĐỂ MÃ HÓA): {folder_path}")
-
-    def select_enc_folder(self):
-        folder_path = filedialog.askdirectory(title="Chọn Thư mục chứa các tệp .enc cần GIẢI MÃ")
-        if folder_path:
-            self.selected_file_path = folder_path
-            self.is_folder_mode = True
-            folder_name = os.path.basename(folder_path)
-            self.file_path_lbl.configure(text=f"Thư mục Giải mã: /{folder_name}")
-            self.log(f"[*] Đã chọn THƯ MỤC MÃ HÓA .ENC (ĐỂ GIẢI MÃ): {folder_path}")
+            self.file_path_lbl.configure(text=f"Thư mục: /{folder_name}")
+            self.log(f"[*] Đã chọn THƯ MỤC: {folder_path}")
 
     def update_progress(self, percent: float, text: str):
         self.progress_bar.set(percent)
@@ -521,16 +508,9 @@ class SecureImageApp(ctk.CTk if ctk else object):
         is_folder = getattr(self, 'is_folder_mode', False) and os.path.isdir(self.selected_file_path)
 
         if is_folder:
-            out_path = filedialog.askdirectory(title="Chọn Thư mục đích lưu các tệp đã Mã hóa (.enc)")
+            out_path = self.selected_file_path
         else:
-            out_path = filedialog.asksaveasfilename(
-                title="Lưu tệp mã hóa (.enc)",
-                defaultextension=".enc",
-                filetypes=[("Encrypted File", "*.enc")]
-            )
-            
-        if not out_path:
-            return
+            out_path = self.selected_file_path + ".enc"
 
         def run():
             self.btn_encrypt.configure(state="disabled")
@@ -600,16 +580,12 @@ class SecureImageApp(ctk.CTk if ctk else object):
         is_folder = getattr(self, 'is_folder_mode', False) and os.path.isdir(self.selected_file_path)
 
         if is_folder:
-            out_path = filedialog.askdirectory(title="Chọn Thư mục đích lưu các tệp sau khi Giải Mã")
+            out_path = self.selected_file_path
         else:
-            out_path = filedialog.asksaveasfilename(
-                title="Lưu tệp ảnh giải mã",
-                defaultextension=".raw",
-                filetypes=[("Tất cả tệp", "*.*")]
-            )
-            
-        if not out_path:
-            return
+            if self.selected_file_path.endswith(".enc"):
+                out_path = self.selected_file_path[:-4]
+            else:
+                out_path = self.selected_file_path + ".dec"
 
         def run():
             self.btn_encrypt.configure(state="disabled")

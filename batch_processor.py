@@ -53,7 +53,7 @@ def main():
     print("[*] Đang kiểm tra USB khóa phần cứng...")
     provider = AutoDetectUSBHardwareSecretProvider()
     if not provider.is_connected():
-        print("[LỖI] CHƯA CẮM USB THẬT (Hoặc USB thiếu tệp 'device_secret.key').")
+        print("[LỖI] CHƯA KẾT NỐI USB THẬT (Hoặc USB thiếu tệp 'device_secret.key').")
         print("Vui lòng cắm USB vào và chạy lại script.")
         return
     print(f"[OK] Đã kết nối: {provider.get_device_info()}")
