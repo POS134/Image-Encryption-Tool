@@ -311,7 +311,7 @@ class SecureImageApp(ctk.CTk if ctk else object):
         super().__init__()
 
         self.title("SecureImageGuard - Hệ thống Bảo vệ & Mã hóa Ảnh An toàn Dung lượng lớn")
-        self.geometry("820x620")
+        self.geometry("920x720")
         ctk.set_appearance_mode("Dark")
         ctk.set_default_color_theme("blue")
 
@@ -330,116 +330,157 @@ class SecureImageApp(ctk.CTk if ctk else object):
         self.start_hw_monitor()
 
     def setup_ui(self):
-        # 1. HEADER TITLE
-        self.header_frame = ctk.CTkFrame(self, corner_radius=10, fg_color="#1E1E24")
-        self.header_frame.pack(fill="x", padx=20, pady=(15, 10))
+        # Thiết lập theme tối giản, chuyên nghiệp theo Stitch Design System
+        ctk.set_appearance_mode("Dark")
+        
+        # --- 1. HEADER (TIÊU ĐỀ) ---
+        self.header_frame = ctk.CTkFrame(self, corner_radius=0, fg_color="#121414", height=80)
+        self.header_frame.pack(fill="x", padx=0, pady=(0, 10))
 
         self.title_label = ctk.CTkLabel(
             self.header_frame, 
-            text="🔒 SECURE-IMAGE-GUARD: HỆ THỐNG MÃ HÓA ÁNH SỐ DUNG LƯỢNG LỚN",
-            font=ctk.CTkFont(size=17, weight="bold"),
-            text_color="#4CAF50"
+            text="SECURE IMAGE GUARD",
+            font=ctk.CTkFont(family="Inter", size=24, weight="bold"),
+            text_color="#FFFFFF"
         )
-        self.title_label.pack(pady=10)
+        self.title_label.pack(pady=(15, 2))
+        
+        self.subtitle_label = ctk.CTkLabel(
+            self.header_frame, 
+            text="Enterprise-Grade Hardware-Bound Image Encryption",
+            font=ctk.CTkFont(family="Inter", size=12),
+            text_color="#C0C7D3" # on-surface-variant
+        )
+        self.subtitle_label.pack(pady=(0, 15))
 
-        # 2. HARDWARE SELECTION & STATUS CARD
-        self.hw_frame = ctk.CTkFrame(self, corner_radius=10)
+        # --- 2. CẤU HÌNH PHẦN CỨNG (HARDWARE CONFIGURATION) ---
+        self.hw_frame = ctk.CTkFrame(self, corner_radius=4, fg_color="#1E2020", border_width=1, border_color="#404751")
         self.hw_frame.pack(fill="x", padx=20, pady=10)
 
-        self.hw_title = ctk.CTkLabel(self.hw_frame, text="Nguồn Khóa Phần Cứng (Hardware Key):", font=ctk.CTkFont(size=14, weight="bold"))
-        self.hw_title.grid(row=0, column=0, padx=15, pady=10, sticky="w")
+        self.hw_title = ctk.CTkLabel(self.hw_frame, text="Hardware Security Module:", font=ctk.CTkFont(family="Inter", size=12, weight="bold"), text_color="#E3E2E2")
+        self.hw_title.grid(row=0, column=0, padx=15, pady=15, sticky="w")
 
         self.mode_selector = ctk.CTkOptionMenu(
             self.hw_frame,
-            values=["USB Thật (Tự động quét)", "Thư mục Mô phỏng (Secure Folder)", "Serial Máy Tính (Hardware-Binding)", "PKCS#11 HSM (SmartCard)"],
-            command=self.on_provider_changed
+            values=["USB Token (Auto-detect)", "Secure Folder (Virtual)", "Machine Serial (Hardware Binding)", "PKCS#11 HSM (SmartCard)"],
+            command=self.on_provider_changed,
+            font=ctk.CTkFont(family="Inter", size=12),
+            width=280,
+            fg_color="#1A1C1C", # surface-container-low
+            button_color="#292A2A", # surface-container-high
+            button_hover_color="#333535", # surface-container-highest
+            corner_radius=4
         )
-        self.mode_selector.grid(row=0, column=1, padx=15, pady=10, sticky="e")
+        self.mode_selector.grid(row=0, column=1, padx=10, pady=15, sticky="w")
 
-        self.status_lbl = ctk.CTkLabel(self.hw_frame, text="Đang kiểm tra thiết bị...", font=ctk.CTkFont(size=13), text_color="#FF9800")
-        self.status_lbl.grid(row=1, column=0, columnspan=2, padx=15, pady=(0, 10), sticky="w")
+        self.status_lbl = ctk.CTkLabel(self.hw_frame, text="System initializing...", font=ctk.CTkFont(family="Inter", size=12), text_color="#007ACC")
+        self.status_lbl.grid(row=0, column=2, padx=15, pady=15, sticky="e")
+        self.hw_frame.grid_columnconfigure(2, weight=1)
 
-        # 3. FILE / FOLDER SELECTION & PIN ENTRY CARD
-        self.input_frame = ctk.CTkFrame(self, corner_radius=10)
+        # --- 3. KHU VỰC ĐẦU VÀO (INPUT & SECURITY PARAMS) ---
+        self.input_frame = ctk.CTkFrame(self, corner_radius=4, fg_color="#1E2020", border_width=1, border_color="#404751")
         self.input_frame.pack(fill="x", padx=20, pady=10)
 
-        # Hàng 1: Thao tác Chọn File / Folder
-        self.btn_select_file = ctk.CTkButton(self.input_frame, text="📄 Chọn Tệp Ảnh Lẻ", command=self.select_file, width=160)
-        self.btn_select_file.grid(row=0, column=0, padx=10, pady=10)
+        # Hàng 1: Chọn File / Folder
+        self.btn_select_file = ctk.CTkButton(
+            self.input_frame, text="Select File", command=self.select_file, 
+            width=120, height=32, font=ctk.CTkFont(family="Inter", size=12),
+            fg_color="transparent", hover_color="#292A2A", border_width=1, border_color="#404751", text_color="#E3E2E2", corner_radius=2
+        )
+        self.btn_select_file.grid(row=0, column=0, padx=(15, 5), pady=(15, 10))
 
-        self.btn_select_folder = ctk.CTkButton(self.input_frame, text="📁 Chọn NGUYÊN THƯ MỤC", command=self.select_folder, width=190, fg_color="#E65100", hover_color="#EF6C00")
-        self.btn_select_folder.grid(row=0, column=1, padx=10, pady=10)
+        self.btn_select_folder = ctk.CTkButton(
+            self.input_frame, text="Select Directory", command=self.select_folder, 
+            width=120, height=32, font=ctk.CTkFont(family="Inter", size=12),
+            fg_color="transparent", hover_color="#292A2A", border_width=1, border_color="#404751", text_color="#E3E2E2", corner_radius=2
+        )
+        self.btn_select_folder.grid(row=0, column=1, padx=5, pady=(15, 10))
 
-        self.file_path_lbl = ctk.CTkLabel(self.input_frame, text="Chưa chọn tệp hoặc thư mục nào", font=ctk.CTkFont(size=12, slant="italic"), text_color="#AAAAAA")
-        self.file_path_lbl.grid(row=0, column=2, padx=15, pady=10, sticky="w")
+        self.file_path_lbl = ctk.CTkLabel(
+            self.input_frame, text="No target selected", 
+            font=ctk.CTkFont(family="Inter", size=12, slant="italic"), text_color="#8A919D" # outline
+        )
+        self.file_path_lbl.grid(row=0, column=2, padx=15, pady=(15, 10), sticky="w")
 
-        # Hàng 3: Mã PIN & Tùy chọn Tự động Xóa Ảnh Gốc (Mô hình A)
-        self.pin_label = ctk.CTkLabel(self.input_frame, text="Mã PIN Bảo mật:", font=ctk.CTkFont(size=13, weight="bold"))
-        self.pin_label.grid(row=2, column=0, padx=15, pady=(5, 15), sticky="w")
+        # Hàng 2: Mã PIN & Tùy chọn Xóa Gốc
+        self.pin_label = ctk.CTkLabel(self.input_frame, text="Security PIN:", font=ctk.CTkFont(family="Inter", size=12, weight="bold"), text_color="#E3E2E2")
+        self.pin_label.grid(row=1, column=0, padx=15, pady=(5, 15), sticky="e")
 
-        self.pin_entry = ctk.CTkEntry(self.input_frame, placeholder_text="Nhập PIN (Ví dụ: 88886666)", show="*", width=200)
-        self.pin_entry.grid(row=2, column=1, padx=10, pady=(5, 15), sticky="w")
+        self.pin_entry = ctk.CTkEntry(
+            self.input_frame, placeholder_text="Enter PIN", show="*", 
+            width=125, height=32, font=ctk.CTkFont(family="Inter", size=14), corner_radius=2,
+            border_color="#404751", fg_color="#121414"
+        )
+        self.pin_entry.grid(row=1, column=1, padx=5, pady=(5, 15), sticky="w")
 
-        self.delete_orig_var = ctk.BooleanVar(value=True) # Mặc định chọn Mô hình A (Tự động xóa ảnh gốc)
+        self.delete_orig_var = ctk.BooleanVar(value=True)
         self.delete_orig_cb = ctk.CTkCheckBox(
             self.input_frame, 
-            text="🔥 Tự động XÓA ẢNH GỐC sau khi Mã Hóa (Mô hình A - Bảo mật Tuyệt đối)", 
+            text="Enable In-Place Encryption (Secure Wipe)", 
             variable=self.delete_orig_var,
-            font=ctk.CTkFont(size=12, weight="bold"),
-            text_color="#FF9800"
+            font=ctk.CTkFont(family="Inter", size=12),
+            text_color="#E3E2E2",
+            checkbox_height=20, checkbox_width=20,
+            corner_radius=2, fg_color="#007ACC", hover_color="#0061A4", border_color="#404751"
         )
-        self.delete_orig_cb.grid(row=2, column=2, padx=15, pady=(5, 15), sticky="w")
+        self.delete_orig_cb.grid(row=1, column=2, padx=15, pady=(5, 15), sticky="w")
 
-        # 4. ACTION BUTTONS (ENCRYPT / DECRYPT)
+        # --- 4. KHU VỰC ĐIỀU KHIỂN CHÍNH (MAIN ACTIONS) ---
         self.action_frame = ctk.CTkFrame(self, fg_color="transparent")
         self.action_frame.pack(fill="x", padx=20, pady=10)
 
         self.btn_encrypt = ctk.CTkButton(
             self.action_frame, 
-            text="🔐 MÃ HÓA ẢNH (.enc)", 
+            text="ENCRYPT", 
             command=self.encrypt_action, 
-            fg_color="#2E7D32", 
-            hover_color="#1B5E20",
-            font=ctk.CTkFont(size=15, weight="bold"),
-            height=45
+            fg_color="#007ACC", # primary-container
+            hover_color="#0061A4", # inverse-primary
+            font=ctk.CTkFont(family="Inter", size=13, weight="bold"),
+            height=40, corner_radius=2
         )
-        self.btn_encrypt.pack(side="left", expand=True, fill="x", padx=(0, 10))
+        self.btn_encrypt.pack(side="left", expand=True, fill="x", padx=(0, 5))
 
         self.btn_decrypt = ctk.CTkButton(
             self.action_frame, 
-            text="🔓 GIẢI MÃ ẢNH", 
+            text="DECRYPT", 
             command=self.decrypt_action, 
-            fg_color="#1565C0", 
-            hover_color="#0D47A1",
-            font=ctk.CTkFont(size=15, weight="bold"),
-            height=45
+            fg_color="transparent", 
+            hover_color="#1A1C1C", # surface-container-low
+            border_width=1, border_color="#007ACC",
+            font=ctk.CTkFont(family="Inter", size=13, weight="bold"),
+            height=40, corner_radius=2, text_color="#E3E2E2"
         )
-        self.btn_decrypt.pack(side="right", expand=True, fill="x", padx=(10, 0))
+        self.btn_decrypt.pack(side="right", expand=True, fill="x", padx=(5, 0))
 
-        # 5. PROGRESS BAR & LOG TEXTBOX
-        self.progress_frame = ctk.CTkFrame(self, corner_radius=10)
+        # --- 5. SYSTEM LOG & PROGRESS ---
+        self.progress_frame = ctk.CTkFrame(self, corner_radius=4, fg_color="#0D0E0F", border_width=1, border_color="#404751") # surface-container-lowest
         self.progress_frame.pack(fill="both", expand=True, padx=20, pady=(10, 20))
 
-        self.progress_bar = ctk.CTkProgressBar(self.progress_frame)
+        self.progress_bar = ctk.CTkProgressBar(self.progress_frame, progress_color="#007ACC", fg_color="#333535", height=8, corner_radius=0)
         self.progress_bar.pack(fill="x", padx=15, pady=(15, 5))
         self.progress_bar.set(0)
 
-        self.progress_lbl = ctk.CTkLabel(self.progress_frame, text="Sẵn sàng thực thi...", font=ctk.CTkFont(size=12))
-        self.progress_lbl.pack(anchor="w", padx=15, pady=2)
+        self.progress_lbl = ctk.CTkLabel(self.progress_frame, text="Ready", font=ctk.CTkFont(family="Inter", size=11), text_color="#8A919D")
+        self.progress_lbl.pack(anchor="w", padx=15, pady=(0, 5))
 
-        self.log_textbox = ctk.CTkTextbox(self.progress_frame, font=ctk.CTkFont(family="Consolas", size=12))
-        self.log_textbox.pack(fill="both", expand=True, padx=15, pady=10)
+        self.log_textbox = ctk.CTkTextbox(
+            self.progress_frame, 
+            font=ctk.CTkFont(family="JetBrains Mono", size=13), 
+            fg_color="#0D0E0F", text_color="#E3E2E2", 
+            border_width=0, corner_radius=0
+        )
+        self.log_textbox.pack(fill="both", expand=True, padx=15, pady=(0, 15))
 
     def log(self, msg: str):
         self.log_textbox.insert("end", msg + "\n")
         self.log_textbox.see("end")
 
     def on_provider_changed(self, choice: str):
-        if "USB Thật" in choice:
+        if "USB Token" in choice:
             self.current_provider = self.usb_provider
-        elif "Thư mục Mô phỏng" in choice:
+        elif "Secure Folder" in choice:
             self.current_provider = self.folder_provider
-        elif "Serial Máy Tính" in choice:
+        elif "Machine Serial" in choice:
             self.current_provider = self.machine_provider
         else:
             self.current_provider = self.pkcs11_provider
