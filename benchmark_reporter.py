@@ -11,7 +11,7 @@ def generate_visualization_report():
         sys.stdout.reconfigure(encoding='utf-8')
 
     print("=" * 80)
-    print(" BẮT ĐẦU TẠO CÁC BIỂU ĐỒ & HÌNH ẢNH TRỰC QUAN CHO BÁO CÁO THẠC SĨ")
+    print(" BẮT ĐẦU TẠO CÁC BIỂU ĐỒ & HÌNH ẢNH TRỰC QUAN CHO BÁO CÁO")
     print("=" * 80)
 
     workspace_dir = os.path.dirname(os.path.abspath(__file__))

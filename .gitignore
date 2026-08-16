@@ -35,3 +35,7 @@ env/
 # OS generated files
 .DS_Store
 Thumbs.db
+
+# Agents
+.agents
+ag-kit
