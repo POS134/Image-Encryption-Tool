@@ -310,7 +310,7 @@ class SecureImageApp(ctk.CTk if ctk else object):
         
         super().__init__()
 
-        self.title("SecureImageGuard - Hệ thống Bảo vệ & Mã hóa Ảnh An toàn Dung lượng lớn")
+        self.title("Secure Image Guard - Pro Dashboard")
         self.geometry("920x720")
         ctk.set_appearance_mode("Dark")
         ctk.set_default_color_theme("blue")
@@ -339,7 +339,7 @@ class SecureImageApp(ctk.CTk if ctk else object):
 
         self.title_label = ctk.CTkLabel(
             self.header_frame, 
-            text="SECURE IMAGE GUARD",
+            text="SECURE IMAGE GUARD - PRO DASHBOARD",
             font=ctk.CTkFont(family="Inter", size=24, weight="bold"),
             text_color="#FFFFFF"
         )
